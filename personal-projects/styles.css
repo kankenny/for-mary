@@ -1,0 +1,182 @@
+body{
+    display:flex;
+    flex-direction:column;
+    background-color: #1F2937;
+}
+
+.up, .songs, .down, .header, .left, .right, .content, .first, .topinfo, t.topimages, .c1, .c2, .c3, c4, .second, .third, .signup, .ext, .footer{
+    display:flex;
+}
+
+
+
+.up{
+    flex-direction: row;
+    font-size:24px;
+    justify-content: space-around;
+    padding-top:10;
+    padding-bottom:75px;
+    color:#f9faf8;
+    font-weight: 700;
+    align-items: center;
+    gap: 775px;px;
+    font-style: oblique;
+}
+
+.left{
+    flex-direction:column;
+    align-items:flex-start;
+    gap:50px;
+    
+}
+
+.songs{
+    align-self: center;
+}
+
+audio{
+    align-self: center;}
+
+.main{
+    font-size: 48px;
+    font-weight:bolder;
+    margin-bottom:5px;
+    max-width:450px;
+    color:#f9faf8;
+}
+
+.left .subtext{
+    margin-bottom:10px;
+    max-width:370px;
+    color:#f9faf8;
+}
+
+.down{
+    flex-direction: row;
+    justify-content: space-around;
+    padding-bottom:75px;
+}
+
+.header{
+    flex-direction: column;
+    background-image: url("media/ 10.jpg");
+}
+
+
+.right{
+    flex-grow:0;
+}
+a{
+    color:#f9faf8;
+    font-size:18px;
+}
+
+ul{
+    display:flex;
+    flex-direction: row;
+    list-style-type: none;
+    margin:0;
+    padding:0;
+    gap:15px;
+    font-weight: normal;
+    color:#f9faf8;
+}
+
+a{
+    text-decoration: none;
+}
+
+button{
+    color:#f9faf8;
+    background-color: #3882f6;
+    border-radius: 5px;
+    padding:3px;
+    padding-left: 15px;
+    padding-right:15px;
+    font-weight: bold;
+}
+
+.content{
+    background-color:white;
+    flex-direction:column;
+}
+
+.topinfo{
+    display:flex;
+    font-size:36px;
+    font-weight:bolder;
+    align-self: center;
+    margin-top: 30px;
+    margin-bottom: 30px;
+    font-style:italic;
+}
+
+.topimages{
+    display:flex;
+    align-self:center;
+    gap: 70px;
+}
+
+.c1, .c2, .c3, .c4{
+    flex:display;
+    flex-direction: column;
+    justify-self:center;
+    text-align: center;
+    margin-bottom: 90px;
+
+}
+
+.square {
+    border:3px #3882f6;
+    flex-shrink:0;
+    margin-bottom:5px;
+}
+
+.first, .second{
+    flex-direction:column;
+}
+
+.topimages .subtext{
+    width: 200px;
+    flex-shrink:0;
+    flex-basis:1;
+}
+
+
+
+.quote{
+    max-width: 610px;
+}
+
+.quoter{
+    text-align: right;
+    font-weight: bold;
+}
+
+.third{
+    height:250px;
+    align-items: center;
+    justify-content:center;
+}
+.signup{
+    background-image:url("https://www.miltonandking.com/wp-content/uploads/2018/10/Wallpaper-Republic-PeoniesAnemones-Double-1-1100x1318.jpg");
+    justify-content:center;
+    padding: 35px 95px 35px 95px;
+    border-radius: 5px;
+    color:black;
+    gap:120px;
+    width: 800px;
+}
+
+.CTA{
+    font-weight: bolder;
+    font-size: 18px;
+
+}
+
+.footer{
+    color:#e5e7eb;
+    align-self: center;
+    padding-top:15px;
+    padding-bottom: 15px;
+}
