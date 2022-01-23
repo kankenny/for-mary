@@ -30,6 +30,14 @@ body{
     
 }
 
+.sptIcon{
+    flex-grow:0;
+    height: 70px;
+    width:70px;
+    
+}
+
+
 .songs{
     align-self: center;
 }
@@ -65,6 +73,8 @@ audio{
 
 .right{
     flex-grow:0;
+    max-height: 400px;
+    max-width:750px;
 }
 a{
     color:#f9faf8;
@@ -157,6 +167,7 @@ button{
     height:250px;
     align-items: center;
     justify-content:center;
+    gap:50px;
 }
 .signup{
     background-image:url("https://www.miltonandking.com/wp-content/uploads/2018/10/Wallpaper-Republic-PeoniesAnemones-Double-1-1100x1318.jpg");
