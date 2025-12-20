@@ -4,22 +4,20 @@ body{
     background-color: #1F2937;
 }
 
-.up, .songs, .down, .header, .left, .right, .content, .first, .topinfo, t.topimages, .c1, .c2, .c3, c4, .second, .third, .signup, .ext, .footer{
+.up, .songs, .down, .header, .left, .right, .content, .first, .topinfo, .topimages, .c1, .c2, .c3, .c4, .second, .third, .signup, .footer{
     display:flex;
 }
-
-
 
 .up{
     flex-direction: row;
     font-size:24px;
     justify-content: space-around;
-    padding-top:10;
+    padding-top:10px;
     padding-bottom:75px;
     color:#f9faf8;
     font-weight: 700;
     align-items: center;
-    gap: 775px;px;
+    gap: 775px;
     font-style: oblique;
 }
 
@@ -27,23 +25,21 @@ body{
     flex-direction:column;
     align-items:flex-start;
     gap:50px;
-    
 }
 
 .sptIcon{
     flex-grow:0;
     height: 70px;
     width:70px;
-    
 }
-
 
 .songs{
     align-self: center;
 }
 
 audio{
-    align-self: center;}
+    align-self: center;
+}
 
 .main{
     font-size: 48px;
@@ -67,18 +63,19 @@ audio{
 
 .header{
     flex-direction: column;
-    background-image: url("media/ 10.jpg");
+    background-image: url("media/10.jpg");
 }
-
 
 .right{
     flex-grow:0;
     max-height: 400px;
     max-width:750px;
 }
+
 a{
     color:#f9faf8;
     font-size:18px;
+    text-decoration: none;
 }
 
 ul{
@@ -92,18 +89,26 @@ ul{
     color:#f9faf8;
 }
 
-a{
-    text-decoration: none;
-}
-
 button{
     color:#f9faf8;
     background-color: #3882f6;
     border-radius: 5px;
-    padding:3px;
-    padding-left: 15px;
-    padding-right:15px;
+    padding:3px 15px;
     font-weight: bold;
+}
+
+#toggleSongs {
+    background-color: transparent;
+    border: 1px solid #ffffff;
+    color: #9ca3af;
+    padding: 3px 8px;
+    font-size: 13px;
+    opacity: 0.5;
+    cursor: pointer;
+}
+
+#toggleSongs:hover {
+    opacity: 0.9;
 }
 
 .content{
@@ -128,16 +133,14 @@ button{
 }
 
 .c1, .c2, .c3, .c4{
-    flex:display;
     flex-direction: column;
     justify-self:center;
     text-align: center;
     margin-bottom: 90px;
-
 }
 
 .square {
-    border:3px #3882f6;
+    border: 3px solid #3882f6;
     flex-shrink:0;
     margin-bottom:5px;
 }
@@ -151,8 +154,6 @@ button{
     flex-shrink:0;
     flex-basis:1;
 }
-
-
 
 .quote{
     max-width: 610px;
@@ -169,25 +170,6 @@ button{
     justify-content:center;
     gap:50px;
 }
+
 .signup{
-    background-image:url("https://www.miltonandking.com/wp-content/uploads/2018/10/Wallpaper-Republic-PeoniesAnemones-Double-1-1100x1318.jpg");
-    justify-content:center;
-    padding: 35px 95px 35px 95px;
-    border-radius: 5px;
-    color:black;
-    gap:120px;
-    width: 800px;
-}
-
-.CTA{
-    font-weight: bolder;
-    font-size: 18px;
-
-}
-
-.footer{
-    color:#e5e7eb;
-    align-self: center;
-    padding-top:15px;
-    padding-bottom: 15px;
-}
+    background-image:url("https://www.miltonandking.com/wp-content/uploads/2018/10/Wallpaper-Republic-PeoniesAnemones-Double-1-1100x131
