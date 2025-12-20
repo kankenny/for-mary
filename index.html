@@ -18,19 +18,16 @@
                 </ul>
             </div>
 
-
             <div class="down">
                 <div class="left">
                     <div class="main">Happy Anniversary, my Love.</div>
                     <div class="subtext">A girl like you deserves all the flowers in the world. This is for all those times that I should have given you flowers.</div>
-                    
                 </div>
                 <div class="right"> 
                     <img src="media/7.jpg">
                 </div>
             </div>
         </div>
-
 
         <div class="content">
 
@@ -42,79 +39,82 @@
 
                 <div class="topimages">
                     <div class="c1">
-                        <a href="https://public.wsu.edu/~delahoyd/parker.rose.html"><img class="square" src="media/11.jpg" alt="roses"></a>
+                        <a href="https://public.wsu.edu/~delahoyd/parker.rose.html">
+                            <img class="square" src="media/11.jpg" alt="roses">
+                        </a>
                         <div class="subtext">The red rose symbolizes deep emotions and desires. Red roses are traditionally given to symbolize love.</div>
                     </div>
+
                     <div class="c2">
-                        <a href="https://www.poetryoutloud.org/poem/dyed-carnations/"><img class="square" src="media/12.jpg" alt="carnations"></a>
+                        <a href="https://www.poetryoutloud.org/poem/dyed-carnations/">
+                            <img class="square" src="media/12.jpg" alt="carnations">
+                        </a>
                         <div class="subtext">Carnations - (Greek translation: 'dianthus' translates to "heavenly flower" or the flower of love). The different colors beautifully symbolize gracefulness, gentleness and gloriousness.</div>
                     </div>
+
                     <div class="c3">
-                        <a href="https://www.lovepoemsandpoets.com/poem/imagery_682011"><img class="square" src="media/13.jpg" alt="sunflowers"></a>
+                        <a href="https://www.lovepoemsandpoets.com/poem/imagery_682011">
+                            <img class="square" src="media/13.jpg" alt="sunflowers">
+                        </a>
                         <div class="subtext">Sunflowers are a symbol of love, joy, and loyalty. It is amazing that you are the physical embodiment of a sunflower as it perfectly describes you.</div>
                     </div>
-                    
                 </div>
-                <div class="songs">
-                        
-                    <audio allow="autoplay"
-                        controls
-                        src="media/s2.mp3" >
-                            Your browser does not support the
-                            <code>audio</code> element.
-                    </audio>
 
-                    <audio
-                        controls
-                        src="media/s1.mp3">
-                            Your browser does not support the
-                            <code>audio</code> element.
-                    </audio>
-                
-                    <audio
-                        controls
-                        src="media/s3.mp3">
-                            Your browser does not support the
-                            <code>audio</code> element.
-                    </audio>
-                
+                <div class="songs" id="group1">
+                    <audio controls src="media/s2.mp3"></audio>
+                    <audio controls src="media/s1.mp3"></audio>
+                    <audio controls src="media/s3.mp3"></audio>
+                </div>
+
+                <div class="songs" id="group2" style="display:none;">
+                    <audio controls src="media/s4.mp3"></audio>
+                    <audio controls src="media/s5.mp3"></audio>
+                    <audio controls src="media/s6.mp3"></audio>
+                </div>
+
+                <button id="toggleSongs">Ignore the Facade?</button>
+
             </div>
-                
-            </div>
-
-
-            
 
             <div class="third">
-
                 <div class="signup">
                     <div class="text">
-                    <div class="CTA">I may not be a good singer but, I still could give you the songs that make me think about you</div>
-                    <div>If you want to listen to them again click the links above.</div>
-                     </div>
+                        <div class="CTA">I may not be a good singer but, I still could give you the songs that make me think about you</div>
+                        <div>If you want to listen to them again click the links above.</div>
+                    </div>
                 </div>
 
                 <div class="spotify">
-                    <a href="https://open.spotify.com/playlist/6XOgdJxbc3rFsvllQEDvQe"><img class="sptIcon" src="media/icon.png"></a>
+                    <a href="https://open.spotify.com/playlist/6XOgdJxbc3rFsvllQEDvQe">
+                        <img class="sptIcon" src="media/icon.png">
+                    </a>
                 </div>
-
             </div>
 
         </div>
 
-
         <div class="footer">
             <div>Project and full code by: Kennette Maddela w/ special thanks to TOP</div>
-
         </div>
 
-        
+        <script>
+            let showingFirst = true;
 
+            document.getElementById("toggleSongs").addEventListener("click", () => {
+                const g1 = document.getElementById("group1");
+                const g2 = document.getElementById("group2");
 
+                if (showingFirst) {
+                    g1.style.display = "none";
+                    g2.style.display = "block";
+                } else {
+                    g1.style.display = "block";
+                    g2.style.display = "none";
+                }
+
+                showingFirst = !showingFirst;
+            });
+        </script>
 
     </body>
-
-
-
-
 </html>
