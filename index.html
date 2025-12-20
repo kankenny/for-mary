@@ -97,24 +97,59 @@
             <div>Project and full code by: Kennette Maddela w/ special thanks to TOP</div>
         </div>
 
-        <script>
-            let showingFirst = true;
-
-            document.getElementById("toggleSongs").addEventListener("click", () => {
-                const g1 = document.getElementById("group1");
-                const g2 = document.getElementById("group2");
-
-                if (showingFirst) {
-                    g1.style.display = "none";
-                    g2.style.display = "block";
+    <script>
+        let showingFirst = true;
+    
+        const toggleBtn = document.getElementById("toggleSongs");
+        const g1 = document.getElementById("group1");
+        const g2 = document.getElementById("group2");
+        const audios = document.querySelectorAll("audio");
+    
+        function fadeOut(audio) {
+            let vol = audio.volume;
+            const fade = setInterval(() => {
+                if (vol > 0.05) {
+                    vol -= 0.05;
+                    audio.volume = vol;
                 } else {
-                    g1.style.display = "block";
-                    g2.style.display = "none";
+                    audio.pause();
+                    audio.currentTime = 0;
+                    audio.volume = 1;
+                    clearInterval(fade);
                 }
-
-                showingFirst = !showingFirst;
+            }, 30);
+        }
+    
+        toggleBtn.addEventListener("click", () => {
+            audios.forEach(a => {
+                if (!a.paused) fadeOut(a);
             });
-        </script>
+    
+            if (showingFirst) {
+                g1.style.display = "none";
+                g2.style.display = "block";
+                toggleBtn.textContent = "Back to Rose-Tinted Glasses";
+            } else {
+                g1.style.display = "block";
+                g2.style.display = "none";
+                toggleBtn.textContent = "Ignore the Facade?";
+            }
+    
+            showingFirst = !showingFirst;
+        });
+    
+        audios.forEach(audio => {
+            audio.addEventListener("play", () => {
+                audios.forEach(other => {
+                    if (other !== audio) {
+                        other.pause();
+                        other.currentTime = 0;
+                    }
+                });
+            });
+        });
+    </script>
+
 
     </body>
 </html>
