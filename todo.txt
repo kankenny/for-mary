@@ -1,0 +1,6 @@
+1. convert to Next app, I should still consider the static-ness of the url given by github pages
+2. 500 days of summer expectation vs reality until black and white. 
+    a. until black and white, decide start of vid
+    b. disable everything during scene
+    c. enable expected behavior until ending scene
+    d. why am I still doing this to myself??????????????????????????????
