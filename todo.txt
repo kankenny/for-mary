@@ -7,3 +7,4 @@
     e. implement same "tree" of the movie, I have this on one of my books
 3. refactor styling to tailwind css, shadcn  
  
+ 
