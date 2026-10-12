@@ -3,6 +3,8 @@ body {
     margin: 0;
     height: 100%;
     overflow: hidden;
+    overscroll-behavior: none;
+    touch-action: manipulation;
     background: #000;
 }
 
