@@ -15,7 +15,7 @@
         <script>
             const FADE = 10;
             const tracks = ["media/Hero.mp3", "media/Quelqu'un m'a dit.mp3"];
-            const unlock = ["pointerdown", "keydown", "touchstart"];
+            const unlock = ["pointerdown", "pointerup", "touchend", "click", "keydown"];
 
             const ctx = new AudioContext();
             const players = tracks.map(src => {
