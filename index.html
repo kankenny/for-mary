@@ -32,8 +32,18 @@
     <script>
       const FADE = 10;
       const tracks = [
-        { src: "media/Hero.mp3", level: 1 },
-        { src: "media/Quelqu'un m'a dit.mp3", level: 0.65 },
+        {
+          src: "media/Hero.mp3",
+          level: 1,
+          title: "Hero",
+          artist: "Regina Spektor",
+        },
+        {
+          src: "media/Quelqu'un m'a dit.mp3",
+          level: 0.65,
+          title: "Quelqu'un m'a dit",
+          artist: "Carla Bruni",
+        },
       ];
       const unlock = [
         "pointerdown",
@@ -49,14 +59,23 @@
       if (navigator.audioSession) navigator.audioSession.type = "playback";
 
       const ctx = new AudioContext();
-      const players = tracks.map(({ src, level }) => {
+      const players = tracks.map(({ src, level, title, artist }) => {
         const el = new Audio(encodeURI(src));
         el.preload = "auto";
         const gain = ctx.createGain();
         gain.gain.value = 0;
         ctx.createMediaElementSource(el).connect(gain).connect(ctx.destination);
-        return { el, gain, level };
+        return { el, gain, level, title, artist };
       });
+
+      function nowPlaying({ title, artist }) {
+        if (!("mediaSession" in navigator)) return;
+        navigator.mediaSession.metadata = new MediaMetadata({
+          title,
+          artist,
+          artwork: [{ src: "media/poster.jpg", type: "image/jpeg" }],
+        });
+      }
 
       let current = 0;
       let fading = false;
@@ -87,6 +106,7 @@
         next.gain.gain.value = 0;
         next.el.currentTime = 0;
         await next.el.play().catch(() => {});
+        nowPlaying(next);
         ramp(next.gain.gain, rise, next.level);
         ramp(out.gain.gain, fall, out.level);
 
@@ -119,6 +139,7 @@
             started = true;
             cue.classList.remove("show");
             players[0].gain.gain.value = players[0].level;
+            nowPlaying(players[0]);
             unlock.forEach((e) => removeEventListener(e, begin));
           })
           .catch(() => {});
