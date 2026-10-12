@@ -12,10 +12,19 @@
             <source src="media/scene1.mp4" type="video/mp4">
         </video>
 
+        <button class="cue" aria-label="play sound">
+            <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">
+                <path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor"/>
+                <path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+            </svg>
+        </button>
+
         <script>
             const FADE = 10;
             const tracks = ["media/Hero.mp3", "media/Quelqu'un m'a dit.mp3"];
             const unlock = ["pointerdown", "pointerup", "touchend", "click", "keydown"];
+
+            const cue = document.querySelector(".cue");
 
             const ctx = new AudioContext();
             const players = tracks.map(src => {
@@ -71,6 +80,7 @@
                 ctx.resume();
                 players[0].el.play().then(() => {
                     started = true;
+                    cue.classList.remove("show");
                     players[0].gain.gain.value = 1;
                     unlock.forEach(e => removeEventListener(e, begin));
                 }).catch(() => {});
@@ -78,6 +88,9 @@
 
             unlock.forEach(e => addEventListener(e, begin));
             begin();
+            setTimeout(() => {
+                if (!started) cue.classList.add("show");
+            }, 1500);
         </script>
     </body>
 </html>
