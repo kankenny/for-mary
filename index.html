@@ -11,5 +11,73 @@
         <video autoplay muted loop playsinline preload="auto" poster="media/poster.jpg">
             <source src="media/scene1.mp4" type="video/mp4">
         </video>
+
+        <script>
+            const FADE = 5;
+            const tracks = ["media/Hero.mp3", "media/Quelqu'un m'a dit.mp3"];
+            const unlock = ["pointerdown", "keydown", "touchstart"];
+
+            const ctx = new AudioContext();
+            const players = tracks.map(src => {
+                const el = new Audio(encodeURI(src));
+                el.preload = "auto";
+                const gain = ctx.createGain();
+                gain.gain.value = 0;
+                ctx.createMediaElementSource(el).connect(gain).connect(ctx.destination);
+                return { el, gain };
+            });
+
+            let current = 0;
+            let fading = false;
+            let started = false;
+
+            function ramp(param, to) {
+                const t = ctx.currentTime;
+                param.cancelScheduledValues(t);
+                param.setValueAtTime(param.value, t);
+                param.linearRampToValueAtTime(to, t + FADE);
+            }
+
+            function crossfade() {
+                fading = true;
+                const out = players[current];
+                current = (current + 1) % players.length;
+                const next = players[current];
+
+                next.gain.gain.value = 0;
+                next.el.currentTime = 0;
+                next.el.play();
+                ramp(next.gain.gain, 1);
+                ramp(out.gain.gain, 0);
+
+                setTimeout(() => {
+                    out.el.pause();
+                    fading = false;
+                }, FADE * 1000 + 200);
+            }
+
+            players.forEach((p, i) => {
+                p.el.addEventListener("timeupdate", () => {
+                    if (i !== current || fading || !p.el.duration) return;
+                    if (p.el.duration - p.el.currentTime <= FADE) crossfade();
+                });
+                p.el.addEventListener("ended", () => {
+                    if (i === current && !fading) crossfade();
+                });
+            });
+
+            function begin() {
+                if (started) return;
+                ctx.resume();
+                players[0].el.play().then(() => {
+                    started = true;
+                    players[0].gain.gain.value = 1;
+                    unlock.forEach(e => removeEventListener(e, begin));
+                }).catch(() => {});
+            }
+
+            unlock.forEach(e => addEventListener(e, begin));
+            begin();
+        </script>
     </body>
 </html>
