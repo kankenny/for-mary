@@ -145,6 +145,8 @@
           .catch(() => {});
       }
 
+      video.addEventListener("ended", () => video.classList.add("settled"));
+
       document.addEventListener("visibilitychange", () => {
         if (started && !document.hidden) ctx.resume();
       });
