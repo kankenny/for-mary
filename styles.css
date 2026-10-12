@@ -19,7 +19,7 @@ video {
 }
 
 video.settled {
-    filter: brightness(0.55);
+    filter: brightness(0.7);
 }
 
 .cue {
