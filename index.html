@@ -26,6 +26,8 @@
 
             const cue = document.querySelector(".cue");
 
+            if (navigator.audioSession) navigator.audioSession.type = "playback";
+
             const ctx = new AudioContext();
             const players = tracks.map(src => {
                 const el = new Audio(encodeURI(src));
@@ -85,6 +87,10 @@
                     unlock.forEach(e => removeEventListener(e, begin));
                 }).catch(() => {});
             }
+
+            document.addEventListener("visibilitychange", () => {
+                if (started && !document.hidden) ctx.resume();
+            });
 
             unlock.forEach(e => addEventListener(e, begin));
             begin();
