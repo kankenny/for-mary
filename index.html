@@ -59,11 +59,15 @@
       let fading = false;
       let started = false;
 
-      function ramp(param, to) {
+      const rise = Array.from({ length: 256 }, (_, i) =>
+        Math.sin(((i / 255) * Math.PI) / 2),
+      );
+      const fall = [...rise].reverse();
+
+      function ramp(param, shape) {
         const t = ctx.currentTime;
         param.cancelScheduledValues(t);
-        param.setValueAtTime(param.value, t);
-        param.linearRampToValueAtTime(to, t + FADE);
+        param.setValueCurveAtTime(Float32Array.from(shape), t, FADE);
       }
 
       function crossfade() {
@@ -75,8 +79,8 @@
         next.gain.gain.value = 0;
         next.el.currentTime = 0;
         next.el.play();
-        ramp(next.gain.gain, 1);
-        ramp(out.gain.gain, 0);
+        ramp(next.gain.gain, rise);
+        ramp(out.gain.gain, fall);
 
         setTimeout(
           () => {
