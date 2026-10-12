@@ -77,15 +77,16 @@
         );
       }
 
-      function crossfade() {
+      async function crossfade() {
         fading = true;
         const out = players[current];
         current = (current + 1) % players.length;
         const next = players[current];
 
+        next.gain.gain.cancelScheduledValues(ctx.currentTime);
         next.gain.gain.value = 0;
         next.el.currentTime = 0;
-        next.el.play();
+        await next.el.play().catch(() => {});
         ramp(next.gain.gain, rise, next.level);
         ramp(out.gain.gain, fall, out.level);
 
