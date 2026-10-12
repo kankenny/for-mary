@@ -24,6 +24,7 @@
             const tracks = ["media/Hero.mp3", "media/Quelqu'un m'a dit.mp3"];
             const unlock = ["pointerdown", "pointerup", "touchend", "click", "keydown"];
 
+            const video = document.querySelector("video");
             const cue = document.querySelector(".cue");
 
             if (navigator.audioSession) navigator.audioSession.type = "playback";
@@ -79,6 +80,7 @@
 
             function begin() {
                 if (started) return;
+                if (video.paused && !video.ended) video.play().catch(() => {});
                 ctx.resume();
                 players[0].el.play().then(() => {
                     started = true;
