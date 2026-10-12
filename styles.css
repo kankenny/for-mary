@@ -15,11 +15,11 @@ video {
     height: 100%;
     object-fit: cover;
     object-position: 48% 50%;
-    transition: filter 6s ease-out;
+    transition: filter 8s ease-in-out;
 }
 
 video.settled {
-    filter: brightness(0.85);
+    filter: brightness(0.55);
 }
 
 .cue {
