@@ -31,7 +31,10 @@
 
     <script>
       const FADE = 10;
-      const tracks = ["media/Hero.mp3", "media/Quelqu'un m'a dit.mp3"];
+      const tracks = [
+        { src: "media/Hero.mp3", level: 1 },
+        { src: "media/Quelqu'un m'a dit.mp3", level: 0.65 },
+      ];
       const unlock = [
         "pointerdown",
         "pointerup",
@@ -46,13 +49,13 @@
       if (navigator.audioSession) navigator.audioSession.type = "playback";
 
       const ctx = new AudioContext();
-      const players = tracks.map((src) => {
+      const players = tracks.map(({ src, level }) => {
         const el = new Audio(encodeURI(src));
         el.preload = "auto";
         const gain = ctx.createGain();
         gain.gain.value = 0;
         ctx.createMediaElementSource(el).connect(gain).connect(ctx.destination);
-        return { el, gain };
+        return { el, gain, level };
       });
 
       let current = 0;
@@ -64,10 +67,14 @@
       );
       const fall = [...rise].reverse();
 
-      function ramp(param, shape) {
+      function ramp(param, shape, level) {
         const t = ctx.currentTime;
         param.cancelScheduledValues(t);
-        param.setValueCurveAtTime(Float32Array.from(shape), t, FADE);
+        param.setValueCurveAtTime(
+          Float32Array.from(shape, (v) => v * level),
+          t,
+          FADE,
+        );
       }
 
       function crossfade() {
@@ -79,8 +86,8 @@
         next.gain.gain.value = 0;
         next.el.currentTime = 0;
         next.el.play();
-        ramp(next.gain.gain, rise);
-        ramp(out.gain.gain, fall);
+        ramp(next.gain.gain, rise, next.level);
+        ramp(out.gain.gain, fall, out.level);
 
         setTimeout(
           () => {
@@ -110,7 +117,7 @@
           .then(() => {
             started = true;
             cue.classList.remove("show");
-            players[0].gain.gain.value = 1;
+            players[0].gain.gain.value = players[0].level;
             unlock.forEach((e) => removeEventListener(e, begin));
           })
           .catch(() => {});
