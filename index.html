@@ -68,9 +68,9 @@
       if (navigator.audioSession) navigator.audioSession.type = "playback";
 
       const ctx = new AudioContext();
-      const players = tracks.map(({ src, title, artist }) => {
+      const players = tracks.map(({ src, title, artist }, i) => {
         const el = new Audio(encodeURI(src));
-        el.preload = "auto";
+        el.preload = i === 0 ? "auto" : "none";
         const gain = ctx.createGain();
         gain.gain.value = 0;
         ctx.createMediaElementSource(el).connect(gain).connect(ctx.destination);
@@ -84,6 +84,12 @@
           artist,
           artwork: [{ src: "media/poster.jpg", type: "image/jpeg" }],
         });
+      }
+
+      function warm({ el }) {
+        if (el.preload === "auto") return;
+        el.preload = "auto";
+        el.load();
       }
 
       let current = 0;
@@ -127,7 +133,9 @@
       players.forEach((p, i) => {
         p.el.addEventListener("timeupdate", () => {
           if (i !== current || fading || !p.el.duration) return;
-          if (p.el.duration - p.el.currentTime <= FADE) crossfade();
+          const left = p.el.duration - p.el.currentTime;
+          if (left <= FADE + 30) warm(players[(i + 1) % players.length]);
+          if (left <= FADE) crossfade();
         });
         p.el.addEventListener("ended", () => {
           if (i === current && !fading) crossfade();
