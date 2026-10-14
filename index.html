@@ -35,13 +35,11 @@
       const tracks = [
         {
           src: "media/Hero.mp3",
-          level: 1,
           title: "Hero",
           artist: "Regina Spektor",
         },
         {
           src: "media/Quelqu'un m'a dit.mp3",
-          level: 0.65,
           title: "Quelqu'un m'a dit",
           artist: "Carla Bruni",
         },
@@ -60,13 +58,13 @@
       if (navigator.audioSession) navigator.audioSession.type = "playback";
 
       const ctx = new AudioContext();
-      const players = tracks.map(({ src, level, title, artist }) => {
+      const players = tracks.map(({ src, title, artist }) => {
         const el = new Audio(encodeURI(src));
         el.preload = "auto";
         const gain = ctx.createGain();
         gain.gain.value = 0;
         ctx.createMediaElementSource(el).connect(gain).connect(ctx.destination);
-        return { el, gain, level, title, artist };
+        return { el, gain, title, artist };
       });
 
       function nowPlaying({ title, artist }) {
@@ -87,14 +85,10 @@
       );
       const fall = [...rise].reverse();
 
-      function ramp(param, shape, level) {
+      function ramp(param, shape) {
         const t = ctx.currentTime;
         param.cancelScheduledValues(t);
-        param.setValueCurveAtTime(
-          Float32Array.from(shape, (v) => v * level),
-          t,
-          FADE,
-        );
+        param.setValueCurveAtTime(Float32Array.from(shape), t, FADE);
       }
 
       async function crossfade() {
@@ -108,8 +102,8 @@
         next.el.currentTime = 0;
         await next.el.play().catch(() => {});
         nowPlaying(next);
-        ramp(next.gain.gain, rise, next.level);
-        ramp(out.gain.gain, fall, out.level);
+        ramp(next.gain.gain, rise);
+        ramp(out.gain.gain, fall);
 
         setTimeout(
           () => {
@@ -139,7 +133,7 @@
           .then(() => {
             started = true;
             cue.classList.remove("show");
-            players[0].gain.gain.value = players[0].level;
+            players[0].gain.gain.value = 1;
             nowPlaying(players[0]);
             unlock.forEach((e) => removeEventListener(e, begin));
           })
