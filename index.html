@@ -105,17 +105,37 @@
 
       if (navigator.audioSession) navigator.audioSession.type = "playback";
 
+      const SILENCE =
+        "data:audio/wav;base64,UklGRogAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YWQAAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA";
+
       const ctx = new AudioContext();
-      const players = tracks.map(({ src, title, artist }, i) => {
-        const el = new Audio(encodeURI(src));
-        el.preload = i === 0 ? "auto" : "none";
+      const decks = [0, 1].map(() => {
+        const el = new Audio();
+        el.preload = "auto";
         const gain = ctx.createGain();
         gain.gain.value = 0;
         ctx.createMediaElementSource(el).connect(gain).connect(ctx.destination);
-        return { el, gain, title, artist };
+        return { el, gain, track: -1, unlocked: false };
       });
 
+      let current = 0;
+      let live = 0;
+      let fading = false;
+      let started = false;
+      let held = [];
+      let eager = false;
+
+      const active = () => decks[live];
+      const idle = () => decks[1 - live];
       const session = navigator.mediaSession;
+
+      function load(deck, k) {
+        if (deck.track === k) return;
+        deck.track = k;
+        deck.el.src = encodeURI(tracks[k].src);
+      }
+
+      load(decks[0], 0);
 
       function nowPlaying({ title, artist }) {
         if (!session) return;
@@ -127,7 +147,7 @@
       }
 
       function position() {
-        const { el } = players[current];
+        const { el } = active();
         if (!session?.setPositionState || !el.duration) return;
         session.setPositionState({
           duration: el.duration,
@@ -135,18 +155,6 @@
           playbackRate: 1,
         });
       }
-
-      function warm({ el }) {
-        if (el.preload === "auto") return;
-        el.preload = "auto";
-        el.load();
-      }
-
-      let current = 0;
-      let fading = false;
-      let started = false;
-      let held = [];
-      let eager = false;
 
       const rise = Array.from({ length: 256 }, (_, i) =>
         Math.sin(((i / 255) * Math.PI) / 2),
@@ -182,35 +190,36 @@
 
       async function crossfade(step = 1, length = FADE, manual = false) {
         fading = true;
-        const out = players[current];
-        const count = players.length;
-        let next;
+        const out = active();
+        const next = idle();
+        const count = tracks.length;
+        let found = false;
 
         if (manual) slide(out.gain.gain, DIP, 0.4);
 
         for (let n = 1; n < count; n++) {
           const k = (((current + step * n) % count) + count) % count;
-          const p = players[k];
-          p.gain.gain.cancelScheduledValues(ctx.currentTime);
-          p.gain.gain.value = 0;
-          p.el.currentTime = 0;
-          const ok = await start(p.el);
+          load(next, k);
+          next.gain.gain.cancelScheduledValues(ctx.currentTime);
+          next.gain.gain.value = 0;
+          next.el.currentTime = 0;
+          const ok = await start(next.el);
           if (ok) {
             current = k;
-            next = p;
+            found = true;
             break;
           }
-          if (ok === null || !p.el.error) break;
+          if (ok === null || !next.el.error) break;
         }
 
-        if (!next) {
+        if (!found) {
           slide(out.gain.gain, 1, 0.4);
           fading = false;
           return;
         }
 
-        if (eager) warm(players[(current + 1) % count]);
-        nowPlaying(next);
+        live = 1 - live;
+        nowPlaying(tracks[current]);
         position();
         ramp(next.gain.gain, rise, length);
         ramp(out.gain.gain, fall, length, out.gain.gain.value);
@@ -221,21 +230,22 @@
           if (left > 0.05) return setTimeout(settle, left * 1000 + 50);
           out.el.pause();
           fading = false;
-          if (players[current].el.error) crossfade();
+          if (active().el.error) return crossfade();
+          if (eager) load(idle(), (current + 1) % count);
         };
         setTimeout(settle, length * 1000 + 200);
       }
 
       function pause() {
-        held = players.filter((p) => !p.el.paused);
-        held.forEach((p) => p.el.pause());
+        held = decks.filter((d) => !d.el.paused);
+        held.forEach((d) => d.el.pause());
         ctx.suspend();
         if (session) session.playbackState = "paused";
       }
 
       function resume() {
         ctx.resume();
-        (held.length ? held : [players[current]]).forEach((p) => p.el.play());
+        (held.length ? held : [active()]).forEach((d) => d.el.play());
         held = [];
         if (session) session.playbackState = "playing";
       }
@@ -248,7 +258,7 @@
       }
 
       function back() {
-        const { el } = players[current];
+        const { el } = active();
         if (el.currentTime > 3) el.currentTime = 0;
         else skip(-1);
       }
@@ -260,7 +270,7 @@
           nexttrack: () => skip(1),
           previoustrack: back,
           seekto: ({ seekTime }) => {
-            players[current].el.currentTime = seekTime;
+            active().el.currentTime = seekTime;
           },
         };
         for (const [action, handler] of Object.entries(actions)) {
@@ -270,22 +280,21 @@
         }
       }
 
-      players.forEach((p, i) => {
-        p.el.addEventListener("timeupdate", () => {
-          if (i !== current || fading || !p.el.duration) return;
-          const left = p.el.duration - p.el.currentTime;
-          if (left <= FADE + 30) warm(players[(i + 1) % players.length]);
+      decks.forEach((d) => {
+        d.el.addEventListener("timeupdate", () => {
+          if (d !== active() || fading || !d.el.duration) return;
+          const left = d.el.duration - d.el.currentTime;
+          if (left <= FADE + 30) load(idle(), (current + 1) % tracks.length);
           if (left <= FADE) crossfade();
         });
-        p.el.addEventListener("ended", () => {
-          if (i === current && !fading) crossfade();
-        });
-        p.el.addEventListener("error", () => {
-          if (i === current && !fading) crossfade();
-        });
+        for (const type of ["ended", "error"]) {
+          d.el.addEventListener(type, () => {
+            if (d === active() && started && !fading) crossfade();
+          });
+        }
         for (const type of ["playing", "seeked", "durationchange"]) {
-          p.el.addEventListener(type, () => {
-            if (i === current) position();
+          d.el.addEventListener(type, () => {
+            if (d === active()) position();
           });
         }
       });
@@ -294,13 +303,24 @@
         if (started) return;
         if (video.paused && !video.ended) video.play().catch(() => {});
         ctx.resume();
-        players[0].el
+        const [first, second] = decks;
+        if (!second.unlocked) {
+          if (!second.el.src) second.el.src = SILENCE;
+          second.el.play().then(
+            () => {
+              second.unlocked = true;
+              second.el.pause();
+            },
+            () => {},
+          );
+        }
+        first.el
           .play()
           .then(() => {
             started = true;
             cue.classList.remove("show");
-            players[0].gain.gain.value = 1;
-            nowPlaying(players[0]);
+            first.gain.gain.value = 1;
+            nowPlaying(tracks[0]);
             position();
             unlock.forEach((e) => removeEventListener(e, begin));
           })
@@ -388,6 +408,11 @@
 
       addEventListener("pointerdown", (e) => {
         armed = started && onTom(e);
+      });
+
+      addEventListener("touchend", (e) => {
+        if (armed && onTom(e.changedTouches[0])) skip(1);
+        armed = false;
       });
 
       addEventListener("click", (e) => {
