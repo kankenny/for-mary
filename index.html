@@ -32,6 +32,9 @@
 
     <script>
       const FADE = 10;
+      const SKIP = 1.5;
+      const WAIT = 8;
+      const DIP = 0.35;
       const tracks = [
         {
           src: "media/Hero.mp3",
@@ -44,14 +47,49 @@
           artist: "Kodaline",
         },
         {
+          src: "media/Easily.mp3",
+          title: "Easily",
+          artist: "Bruno Major",
+        },
+        {
+          src: "media/To Let A Good Thing Die.mp3",
+          title: "To Let a Good Thing Die",
+          artist: "Bruno Major",
+        },
+        {
           src: "media/Quelqu'un m'a dit.mp3",
           title: "Quelqu'un m'a dit",
           artist: "Carla Bruni",
         },
         {
+          src: "media/Lost Stars.mp3",
+          title: "Lost Stars",
+          artist: "Keira Knightley",
+        },
+        {
+          src: "media/Jealous.mp3",
+          title: "Jealous",
+          artist: "Labrinth",
+        },
+        {
+          src: "media/K.mp3",
+          title: "K.",
+          artist: "Cigarettes After Sex",
+        },
+        {
+          src: "media/Apocalypse.mp3",
+          title: "Apocalypse",
+          artist: "Cigarettes After Sex",
+        },
+        {
           src: "media/Only Hope.mp3",
           title: "Only Hope",
           artist: "Switchfoot",
+        },
+        {
+          src: "media/Second Time.mp3",
+          title: "Second Time",
+          artist: "Bruno Major",
         },
       ];
       const unlock = [
@@ -77,12 +115,24 @@
         return { el, gain, title, artist };
       });
 
+      const session = navigator.mediaSession;
+
       function nowPlaying({ title, artist }) {
-        if (!("mediaSession" in navigator)) return;
-        navigator.mediaSession.metadata = new MediaMetadata({
+        if (!session) return;
+        session.metadata = new MediaMetadata({
           title,
           artist,
           artwork: [{ src: "media/poster.jpg", type: "image/jpeg" }],
+        });
+      }
+
+      function position() {
+        const { el } = players[current];
+        if (!session?.setPositionState || !el.duration) return;
+        session.setPositionState({
+          duration: el.duration,
+          position: Math.min(el.currentTime, el.duration),
+          playbackRate: 1,
         });
       }
 
@@ -95,39 +145,129 @@
       let current = 0;
       let fading = false;
       let started = false;
+      let held = [];
+      let eager = false;
 
       const rise = Array.from({ length: 256 }, (_, i) =>
         Math.sin(((i / 255) * Math.PI) / 2),
       );
       const fall = [...rise].reverse();
 
-      function ramp(param, shape) {
+      function ramp(param, shape, length, from = 1) {
         const t = ctx.currentTime;
         param.cancelScheduledValues(t);
-        param.setValueCurveAtTime(Float32Array.from(shape), t, FADE);
+        param.setValueCurveAtTime(
+          Float32Array.from(shape, (v) => v * from),
+          t,
+          length,
+        );
       }
 
-      async function crossfade() {
+      function slide(param, to, length) {
+        const t = ctx.currentTime;
+        param.cancelScheduledValues(t);
+        param.setValueAtTime(param.value, t);
+        param.linearRampToValueAtTime(to, t + length);
+      }
+
+      function start(el) {
+        return Promise.race([
+          el.play().then(() => true, () => false),
+          new Promise((r) => setTimeout(r, WAIT * 1000, null)),
+        ]).then((ok) => {
+          if (ok === null) el.pause();
+          return ok;
+        });
+      }
+
+      async function crossfade(step = 1, length = FADE, manual = false) {
         fading = true;
         const out = players[current];
-        current = (current + 1) % players.length;
-        const next = players[current];
+        const count = players.length;
+        let next;
 
-        next.gain.gain.cancelScheduledValues(ctx.currentTime);
-        next.gain.gain.value = 0;
-        next.el.currentTime = 0;
-        await next.el.play().catch(() => {});
+        if (manual) slide(out.gain.gain, DIP, 0.4);
+
+        for (let n = 1; n < count; n++) {
+          const k = (((current + step * n) % count) + count) % count;
+          const p = players[k];
+          p.gain.gain.cancelScheduledValues(ctx.currentTime);
+          p.gain.gain.value = 0;
+          p.el.currentTime = 0;
+          const ok = await start(p.el);
+          if (ok) {
+            current = k;
+            next = p;
+            break;
+          }
+          if (ok === null || !p.el.error) break;
+        }
+
+        if (!next) {
+          slide(out.gain.gain, 1, 0.4);
+          fading = false;
+          return;
+        }
+
+        if (eager) warm(players[(current + 1) % count]);
         nowPlaying(next);
-        ramp(next.gain.gain, rise);
-        ramp(out.gain.gain, fall);
+        position();
+        ramp(next.gain.gain, rise, length);
+        ramp(out.gain.gain, fall, length, out.gain.gain.value);
 
-        setTimeout(
-          () => {
-            out.el.pause();
-            fading = false;
+        const end = ctx.currentTime + length;
+        const settle = () => {
+          const left = end - ctx.currentTime;
+          if (left > 0.05) return setTimeout(settle, left * 1000 + 50);
+          out.el.pause();
+          fading = false;
+          if (players[current].el.error) crossfade();
+        };
+        setTimeout(settle, length * 1000 + 200);
+      }
+
+      function pause() {
+        held = players.filter((p) => !p.el.paused);
+        held.forEach((p) => p.el.pause());
+        ctx.suspend();
+        if (session) session.playbackState = "paused";
+      }
+
+      function resume() {
+        ctx.resume();
+        (held.length ? held : [players[current]]).forEach((p) => p.el.play());
+        held = [];
+        if (session) session.playbackState = "playing";
+      }
+
+      function skip(step) {
+        if (!started || fading) return;
+        if (ctx.state !== "running") resume();
+        eager = true;
+        crossfade(step, SKIP, true);
+      }
+
+      function back() {
+        const { el } = players[current];
+        if (el.currentTime > 3) el.currentTime = 0;
+        else skip(-1);
+      }
+
+      if (session) {
+        const actions = {
+          play: resume,
+          pause,
+          nexttrack: () => skip(1),
+          previoustrack: back,
+          seekto: ({ seekTime }) => {
+            players[current].el.currentTime = seekTime;
           },
-          FADE * 1000 + 200,
-        );
+        };
+        for (const [action, handler] of Object.entries(actions)) {
+          try {
+            session.setActionHandler(action, handler);
+          } catch {}
+        }
       }
 
       players.forEach((p, i) => {
@@ -140,6 +280,14 @@
         p.el.addEventListener("ended", () => {
           if (i === current && !fading) crossfade();
         });
+        p.el.addEventListener("error", () => {
+          if (i === current && !fading) crossfade();
+        });
+        for (const type of ["playing", "seeked", "durationchange"]) {
+          p.el.addEventListener(type, () => {
+            if (i === current) position();
+          });
+        }
       });
 
       function begin() {
@@ -153,6 +301,7 @@
             cue.classList.remove("show");
             players[0].gain.gain.value = 1;
             nowPlaying(players[0]);
+            position();
             unlock.forEach((e) => removeEventListener(e, begin));
           })
           .catch(() => {});
@@ -160,8 +309,99 @@
 
       video.addEventListener("ended", () => video.classList.add("settled"));
 
+      const tom = [
+        [0.4942, 0.891],
+        [0.4699, 0.891],
+        [0.4667, 0.8861],
+        [0.4667, 0.8722],
+        [0.4696, 0.8653],
+        [0.4719, 0.8528],
+        [0.4696, 0.8083],
+        [0.4714, 0.7556],
+        [0.4702, 0.7153],
+        [0.4656, 0.7083],
+        [0.4627, 0.6931],
+        [0.4615, 0.6653],
+        [0.4615, 0.6097],
+        [0.4656, 0.5528],
+        [0.4676, 0.5451],
+        [0.4751, 0.5437],
+        [0.476, 0.5333],
+        [0.4812, 0.525],
+        [0.4783, 0.5222],
+        [0.4766, 0.5139],
+        [0.4789, 0.5028],
+        [0.4806, 0.4806],
+        [0.4867, 0.4701],
+        [0.4959, 0.4715],
+        [0.5055, 0.4875],
+        [0.5061, 0.4917],
+        [0.5038, 0.5],
+        [0.5038, 0.5069],
+        [0.5014, 0.5125],
+        [0.5003, 0.525],
+        [0.5032, 0.5292],
+        [0.5064, 0.5437],
+        [0.5098, 0.5437],
+        [0.513, 0.5486],
+        [0.5165, 0.6097],
+        [0.5165, 0.6931],
+        [0.5136, 0.7083],
+        [0.5095, 0.7181],
+        [0.5078, 0.7583],
+        [0.5095, 0.8111],
+        [0.5061, 0.8611],
+        [0.5078, 0.8736],
+        [0.5046, 0.884],
+      ];
+
+      function inside(x, y, shape) {
+        let hit = false;
+        for (let i = 0, j = shape.length - 1; i < shape.length; j = i++) {
+          const [xi, yi] = shape[i];
+          const [xj, yj] = shape[j];
+          if (yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) {
+            hit = !hit;
+          }
+        }
+        return hit;
+      }
+
+      function onTom({ clientX, clientY }) {
+        if (!video.ended || !video.videoWidth) return false;
+        const box = video.getBoundingClientRect();
+        const [ox, oy] = getComputedStyle(video)
+          .objectPosition.split(" ")
+          .map((v) => parseFloat(v) / 100);
+        const scale = Math.max(
+          box.width / video.videoWidth,
+          box.height / video.videoHeight,
+        );
+        const w = video.videoWidth * scale;
+        const h = video.videoHeight * scale;
+        const x = (clientX - box.left - (box.width - w) * ox) / w;
+        const y = (clientY - box.top - (box.height - h) * oy) / h;
+        return inside(x, y, tom);
+      }
+
+      let armed = false;
+
+      addEventListener("pointerdown", (e) => {
+        armed = started && onTom(e);
+      });
+
+      addEventListener("click", (e) => {
+        if (armed && onTom(e)) skip(1);
+        armed = false;
+      });
+
+      addEventListener("pointermove", (e) => {
+        if (e.pointerType !== "mouse") return;
+        video.style.cursor = started && onTom(e) ? "pointer" : "";
+      });
+
       document.addEventListener("visibilitychange", () => {
-        if (started && !document.hidden) ctx.resume();
+        if (started && !held.length && !document.hidden) ctx.resume();
       });
 
       unlock.forEach((e) => addEventListener(e, begin));
