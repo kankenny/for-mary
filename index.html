@@ -38,56 +38,67 @@
       const tracks = [
         {
           src: "media/Hero.mp3",
+          level: 1,
           title: "Hero",
           artist: "Regina Spektor",
         },
         {
           src: "media/All I Want.mp3",
+          level: 0.88,
           title: "All I Want",
           artist: "Kodaline",
         },
         {
           src: "media/Easily.mp3",
+          level: 0.5,
           title: "Easily",
           artist: "Bruno Major",
         },
         {
           src: "media/To Let A Good Thing Die.mp3",
+          level: 1,
           title: "To Let a Good Thing Die",
           artist: "Bruno Major",
         },
         {
           src: "media/Quelqu'un m'a dit.mp3",
+          level: 0.65,
           title: "Quelqu'un m'a dit",
           artist: "Carla Bruni",
         },
         {
           src: "media/Lost Stars.mp3",
+          level: 1.68,
           title: "Lost Stars",
           artist: "Keira Knightley",
         },
         {
           src: "media/Jealous.mp3",
+          level: 0.87,
           title: "Jealous",
           artist: "Labrinth",
         },
         {
           src: "media/K.mp3",
+          level: 0.8,
           title: "K.",
           artist: "Cigarettes After Sex",
         },
         {
           src: "media/Apocalypse.mp3",
+          level: 0.55,
           title: "Apocalypse",
           artist: "Cigarettes After Sex",
         },
         {
           src: "media/Only Hope.mp3",
+          level: 0.92,
           title: "Only Hope",
           artist: "Switchfoot",
         },
         {
           src: "media/Second Time.mp3",
+          level: 0.61,
           title: "Second Time",
           artist: "Bruno Major",
         },
@@ -161,11 +172,11 @@
       );
       const fall = [...rise].reverse();
 
-      function ramp(param, shape, length, from = 1) {
+      function ramp(param, shape, length, scale = 1) {
         const t = ctx.currentTime;
         param.cancelScheduledValues(t);
         param.setValueCurveAtTime(
-          Float32Array.from(shape, (v) => v * from),
+          Float32Array.from(shape, (v) => v * scale),
           t,
           length,
         );
@@ -195,7 +206,7 @@
         const count = tracks.length;
         let found = false;
 
-        if (manual) slide(out.gain.gain, DIP, 0.4);
+        if (manual) slide(out.gain.gain, DIP * tracks[current].level, 0.4);
 
         for (let n = 1; n < count; n++) {
           const k = (((current + step * n) % count) + count) % count;
@@ -213,7 +224,7 @@
         }
 
         if (!found) {
-          slide(out.gain.gain, 1, 0.4);
+          slide(out.gain.gain, tracks[current].level, 0.4);
           fading = false;
           return;
         }
@@ -221,7 +232,7 @@
         live = 1 - live;
         nowPlaying(tracks[current]);
         position();
-        ramp(next.gain.gain, rise, length);
+        ramp(next.gain.gain, rise, length, tracks[current].level);
         ramp(out.gain.gain, fall, length, out.gain.gain.value);
 
         const end = ctx.currentTime + length;
@@ -319,7 +330,7 @@
           .then(() => {
             started = true;
             cue.classList.remove("show");
-            first.gain.gain.value = 1;
+            first.gain.gain.value = tracks[0].level;
             nowPlaying(tracks[0]);
             position();
             unlock.forEach((e) => removeEventListener(e, begin));
