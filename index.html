@@ -135,6 +135,10 @@
       let started = false;
       let held = [];
       let eager = false;
+      let target = 0;
+      let gen = 0;
+      let rewound = -Infinity;
+      let settle = () => {};
 
       const active = () => decks[live];
       const idle = () => decks[1 - live];
@@ -200,21 +204,26 @@
       }
 
       async function crossfade(step = 1, length = FADE, manual = false) {
+        const run = ++gen;
         fading = true;
         const out = active();
         const next = idle();
         const count = tracks.length;
+        const base = target;
         let found = false;
 
+        next.el.pause();
         if (manual) slide(out.gain.gain, DIP * tracks[current].level, 0.4);
 
         for (let n = 1; n < count; n++) {
-          const k = (((current + step * n) % count) + count) % count;
+          const k = (((base + step * n) % count) + count) % count;
+          target = k;
           load(next, k);
           next.gain.gain.cancelScheduledValues(ctx.currentTime);
           next.gain.gain.value = 0;
           next.el.currentTime = 0;
           const ok = await start(next.el);
+          if (run !== gen) return;
           if (ok) {
             current = k;
             found = true;
@@ -224,8 +233,10 @@
         }
 
         if (!found) {
+          target = current;
           slide(out.gain.gain, tracks[current].level, 0.4);
           fading = false;
+          if (out.el.ended) crossfade();
           return;
         }
 
@@ -236,15 +247,20 @@
         ramp(out.gain.gain, fall, length, out.gain.gain.value);
 
         const end = ctx.currentTime + length;
-        const settle = () => {
-          const left = end - ctx.currentTime;
-          if (left > 0.05) return setTimeout(settle, left * 1000 + 50);
+        let done = false;
+        settle = () => {
+          if (done || run !== gen || end - ctx.currentTime > 0.05) return;
+          done = true;
           out.el.pause();
           fading = false;
           if (active().el.error) return crossfade();
           if (eager) load(idle(), (current + 1) % count);
         };
-        setTimeout(settle, length * 1000 + 200);
+        const tick = () => {
+          settle();
+          if (!done && run === gen) setTimeout(tick, 250);
+        };
+        setTimeout(tick, length * 1000);
       }
 
       function pause() {
@@ -262,7 +278,7 @@
       }
 
       function skip(step) {
-        if (!started || fading) return;
+        if (!started) return;
         if (ctx.state !== "running") resume();
         eager = true;
         crossfade(step, SKIP, true);
@@ -270,8 +286,14 @@
 
       function back() {
         const { el } = active();
-        if (el.currentTime > 3) el.currentTime = 0;
-        else skip(-1);
+        const again = performance.now() - rewound < 5000;
+        if (!fading && !again && el.currentTime > 3) {
+          el.currentTime = 0;
+          rewound = performance.now();
+        } else {
+          rewound = -Infinity;
+          skip(-1);
+        }
       }
 
       if (session) {
@@ -293,7 +315,8 @@
 
       decks.forEach((d) => {
         d.el.addEventListener("timeupdate", () => {
-          if (d !== active() || fading || !d.el.duration) return;
+          if (d !== active() || !d.el.duration) return;
+          if (fading) return settle();
           const left = d.el.duration - d.el.currentTime;
           if (left <= FADE + 30) load(idle(), (current + 1) % tracks.length);
           if (left <= FADE) crossfade();
